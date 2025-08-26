@@ -2,6 +2,7 @@ import { ResponsiveBar } from '@nivo/bar';
 import { linearGradientDef } from '@nivo/core';
 import { useRef, useState, useMemo } from 'react';
 import type { BarTooltipProps } from '@nivo/bar';
+
 interface ChartData {
   regra: string;
   valor: number;
@@ -51,8 +52,19 @@ export default function BarChart() {
       tooltip: { container: { background: '#003366', color: 'white' } },
       labels: { text: { fill: '#333333', fontSize: '14px', fontWeight: 'bold' } }
     };
+
+    const maxDataValue = useMemo(() => Math.max(...data.map(d => d.valor)), [data]);
+
+    const [filterRange, setFilterRange] = useState<[number, number]>([0, maxDataValue]);
     
-    const totalValue = useMemo(() => data.reduce((sum, d) => sum + d.valor, 0), [data]);
+    const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+    
+    const filteredData = useMemo(() => {
+        const [min, max] = filterRange;
+        return data.filter(d => d.valor >= min && d.valor <= max);
+    }, [data, filterRange]);
+
+    const totalValue = useMemo(() => filteredData.reduce((sum, d) => sum + d.valor, 0), [filteredData]);
     
     const CustomTooltip = ({ value, indexValue }: BarTooltipProps<ChartData>) => {
       const percentage = totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : 0;
@@ -67,7 +79,7 @@ export default function BarChart() {
       );
     };
 
-    const minWidth = data.length * 60;
+    const minWidth = filteredData.length * 60;
     
     const [isDragging, setIsDragging] = useState(false);
     const [startX, setStartX] = useState(0);
@@ -105,12 +117,44 @@ export default function BarChart() {
           </div>
           <div className="summary-card">
             <h2>Cenários Identificados</h2>
-            <p>{data.length}</p>
+            <p>{filteredData.length}</p>
           </div>
           <div className="summary-card">
             <h2>Data da Análise</h2>
             <p>{new Date().toLocaleDateString()}</p>
           </div>
+        </div>
+        
+        <div className="filter-wrapper">
+            <button className="filter-toggle-button" onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}>
+                <span className="icon">⚙️</span> Filtros
+            </button>
+            
+            <div id="filter-container" className={isFilterMenuOpen ? 'open' : ''}>
+                <h3>Filtrar por número de registros</h3>
+                <div className="slider-wrapper">
+                    <label>
+                        Mínimo: {filterRange[0]}
+                        <input
+                            type="range"
+                            min={0}
+                            max={maxDataValue}
+                            value={filterRange[0]}
+                            onChange={(e) => setFilterRange([Number(e.target.value), filterRange[1]])}
+                        />
+                    </label>
+                    <label>
+                        Máximo: {filterRange[1]}
+                        <input
+                            type="range"
+                            min={0}
+                            max={maxDataValue}
+                            value={filterRange[1]}
+                            onChange={(e) => setFilterRange([filterRange[0], Number(e.target.value)])}
+                        />
+                    </label>
+                </div>
+            </div>
         </div>
 
         <div id="chart-container">
@@ -129,7 +173,7 @@ export default function BarChart() {
           >
             <div style={{ width: '100%', height: '100%', minWidth: `${minWidth}px` }}>
               <ResponsiveBar
-                data={data}
+                data={filteredData}
                 theme={theme}
                 indexBy="regra"
                 keys={["valor"]}
@@ -190,7 +234,7 @@ export default function BarChart() {
               </tr>
             </thead>
             <tbody>
-              {data.map((item) => {
+              {filteredData.map((item) => {
                 const percentage = totalValue > 0 ? ((item.valor / totalValue) * 100).toFixed(1) : 0;
                 return (
                   <tr key={item.regra}>
