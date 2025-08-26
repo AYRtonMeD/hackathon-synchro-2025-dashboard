@@ -1,9 +1,10 @@
 import { ResponsiveBar } from '@nivo/bar';
+import type { BarDatum } from '@nivo/bar';
 import { linearGradientDef } from '@nivo/core';
 import { useRef, useState, useMemo } from 'react';
 import type { BarTooltipProps } from '@nivo/bar';
 
-interface ChartData {
+interface ChartData extends BarDatum {
   regra: string;
   valor: number;
   [key: string]: string | number;
@@ -66,6 +67,7 @@ export default function BarChart() {
 
     const totalValue = useMemo(() => filteredData.reduce((sum, d) => sum + d.valor, 0), [filteredData]);
     
+    // Altera a tipagem do BarTooltipProps para usar a sua interface ChartData
     const CustomTooltip = ({ value, indexValue }: BarTooltipProps<ChartData>) => {
       const percentage = totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : 0;
       return (
@@ -108,15 +110,18 @@ export default function BarChart() {
       scrollContainerRef.current.scrollLeft = scrollLeft - walk;
     };
 
+    // Adiciona uma flag para verificar se os dados estão sendo filtrados.
+    const isFilterActive = filterRange[0] !== 0 || filterRange[1] !== maxDataValue;
+
     return (
       <>
         <div id="summary-cards">
           <div className="summary-card">
-            <h2>Total de Registros</h2>
+            <h2>{isFilterActive ? "Total de Registros Filtrados" : "Total de Registros"}</h2>
             <p>{totalValue}</p>
           </div>
           <div className="summary-card">
-            <h2>Cenários Identificados</h2>
+            <h2>{isFilterActive ? "Cenários Filtrados" : "Cenários Identificados"}</h2>
             <p>{filteredData.length}</p>
           </div>
           <div className="summary-card">
