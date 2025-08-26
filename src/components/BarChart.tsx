@@ -2,17 +2,14 @@ import { ResponsiveBar } from '@nivo/bar';
 import { linearGradientDef } from '@nivo/core';
 import { useRef, useState, useMemo } from 'react';
 import type { BarTooltipProps } from '@nivo/bar';
-
-// Corrigimos o tipo 'ChartData' adicionando a assinatura de índice
 interface ChartData {
   regra: string;
   valor: number;
-  [key: string]: string | number; // Adicionada esta linha
+  [key: string]: string | number;
 }
 
 export default function BarChart() {
-    // Agora o TypeScript sabe que 'data' é um array do tipo ChartData
-    const data: ChartData[] = [
+    const data: ChartData[] = useMemo(() => [
       { "regra": "Lei 1", "valor": 10 },
       { "regra": "Lei 2", "valor": 50 },
       { "regra": "Lei 3", "valor": 20 },
@@ -42,7 +39,7 @@ export default function BarChart() {
       { "regra": "Lei 27", "valor": 20 },
       { "regra": "Lei 28", "valor": 20 },
       { "regra": "Lei 29", "valor": 10 },
-    ];
+    ], []);
 
     const theme = {
       axis: {
@@ -55,10 +52,8 @@ export default function BarChart() {
       labels: { text: { fill: '#333333', fontSize: '14px', fontWeight: 'bold' } }
     };
     
-    // Calcula o valor total dos dados
     const totalValue = useMemo(() => data.reduce((sum, d) => sum + d.valor, 0), [data]);
     
-    // Passamos o tipo 'ChartData' como um argumento genérico para BarTooltipProps
     const CustomTooltip = ({ value, indexValue }: BarTooltipProps<ChartData>) => {
       const percentage = totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : 0;
       return (
@@ -103,7 +98,6 @@ export default function BarChart() {
 
     return (
       <>
-        {/* Renderiza os cards de resumo aqui */}
         <div id="summary-cards">
           <div className="summary-card">
             <h2>Total de Registros</h2>
@@ -184,6 +178,30 @@ export default function BarChart() {
               />
             </div>
           </div>
+        </div>
+        
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Cenário (Regra)</th>
+                <th>Registros</th>
+                <th>Representatividade (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((item) => {
+                const percentage = totalValue > 0 ? ((item.valor / totalValue) * 100).toFixed(1) : 0;
+                return (
+                  <tr key={item.regra}>
+                    <td>{item.regra}</td>
+                    <td>{item.valor}</td>
+                    <td>{percentage}%</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </>
     );
